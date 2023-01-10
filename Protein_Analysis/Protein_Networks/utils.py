@@ -1,10 +1,10 @@
 import numpy as np
-from networkx import from_numpy_matrix, to_numpy_matrix
 from urllib.request import urlretrieve
 from scipy.spatial.distance import euclidean
 from operator import itemgetter
 #centrality measures
-from networkx.algorithms.centrality import degree_centrality, closeness_centrality, betweenness_centrality, betweenness_centrality_subset
+import networkx as nx
+from networkx.algorithms.centrality import degree_centrality, closeness_centrality,eigenvector_centrality, betweenness_centrality, betweenness_centrality_subset
 import datetime
 import os
 
@@ -101,43 +101,16 @@ def adjacent_matrix(output_path, coordinates, p, min_=4, max_=8):
     n = coordinates.shape[0]
     cords = np.hstack(coordinates[:,1]).reshape(n,3)
     adj = np.zeros((n,n))
-    #d = np.zeros((n,n), dtype=float)
     d = pairwise_distances(X = cords, n_jobs = -1)
 
-    # if comp_adj_fr is not None:
-    #     pb = ttk.Progressbar(comp_adj_fr, orient="horizontal", mode="determinate", length=100)
-    #     pb.pack()
-    #     pb["value"] = 0
-    #     label = tk.Label(comp_adj_fr, text="Current progress {}%".format(pb["value"]))
-    #     label.pack()
-    #     window.update()
-    # else:
     value = 0
     printProgressBar(value, n)
 
     for i in range(n):
         for j in range(i):
-            if ((d[i][j]>min_) and (d[i][j]<max_)):
+            if ((d[i][j]>min_) and (d[i][j] < max_)):
                 adj[i][j] = 1
                 adj[j][i] = 1
-
-        # if comp_adj_fr is not None:
-        #     pb["value"] = round(((i + 1) / n) * 100, 2)
-        #     label['text'] = "Current progress {}%".format(pb["value"])
-        #     pb.pack()
-        #     label.pack()
-        #     window.update()
-        # else:
-        #     printProgressBar(i + 1, n)
-
-    # if comp_adj_fr is not None:
-    #     pb["value"] = round(((i + 1) / n) * 100, 2)
-    #     label['text'] = "Current progress {}%".format(pb["value"])
-    #     pb.pack()
-    #     label.pack()
-    #     window.update()
-    # else:
-    #    # printProgressBar(i + 1, n)
 
     end = time.time()
     print("Time for parallel PCN computation of protein {}: {} s".format(p, (end-start)))
@@ -196,6 +169,39 @@ def betweenness(G, res_names, n=10):
 
     sorted_bc = sorted(dict_node_centrality.items(), key=itemgetter(1), reverse=True)
     print("Top {} nodes by betweenness centrality".format(n))
+    for d in sorted_bc[:n]:
+        print(d)
+
+    return dict_node_centrality
+
+def pagerank_ct(G, res_names, n=10,alpha=0.8):
+    
+    ev = nx.pagerank(G,alpha=alpha)
+    ev = {int (float (k)):v for k,v in ev.items()}
+    dict_node_centrality = dict ()
+    for i, cent in ev.items():
+        
+        dict_node_centrality[res_names[i]] = cent
+    
+    sorted_bc = sorted(dict_node_centrality.items(), key=itemgetter(1), reverse=True)
+    print("Top {} nodes by pagerank".format(n))
+    for d in sorted_bc[:n]:
+        print(d)
+
+    return dict_node_centrality
+
+
+def eigenvector_ct(G, res_names, n=10,iter=500):
+    
+    ev = eigenvector_centrality(G,max_iter=500)
+    ev = {int (float (k)):v for k,v in ev.items()}
+    dict_node_centrality = dict ()
+    for i, cent in ev.items():
+        
+        dict_node_centrality[res_names[i]] = cent
+    
+    sorted_bc = sorted(dict_node_centrality.items(), key=itemgetter(1), reverse=True)
+    print("Top {} nodes by eigenvector_centrality".format(n))
     for d in sorted_bc[:n]:
         print(d)
 
